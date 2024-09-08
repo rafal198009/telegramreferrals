@@ -122,7 +122,7 @@ for _, site_name in urls:
 try:
     while True:
         submit_referral()
-        wait_time = random.randint(40, 55)
+        wait_time = random.randint(12, 17)
         print_colored(f"Waiting for {wait_time} seconds before the next submission...", '93')  # Yellow color
         time.sleep(wait_time)
 except KeyboardInterrupt:
