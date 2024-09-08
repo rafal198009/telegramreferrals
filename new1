@@ -1,0 +1,129 @@
+import time
+import requests
+import random
+import signal
+import sys
+
+def print_colored(text, color_code):
+    print(f"\033[{color_code}m{text}\033[0m")
+
+def show_welcome_message():
+    welcome_message = """
+    =================================
+         Pentagon Auto Reff
+         by gilang sgb
+         thx to PENTIL.pink */\*
+    =================================
+    """
+    print_colored(welcome_message, '92')  # Green color
+
+# Updated list of URLs with descriptions
+urls = [
+    ("https://pentil.pink/pentagonv1", "Pentagon V1"),
+    ("https://pentil.pink/outa", "Outa"),
+    ("https://pentil.pink/bwc", "BWC")
+]
+
+# Dictionary to store referral codes
+ref_codes = {}
+
+# Function to get referral code
+def get_ref_code(site_name):
+    while True:
+        choice = input(f"Do you want to provide a referral code for {site_name}? (y/n): ").lower()
+        if choice == 'y':
+            return input(f"Enter the referral code for {site_name}: ")
+        elif choice == 'n':
+            return None
+        else:
+            print("Invalid choice. Please enter 'y' or 'n'.")
+
+# Function to add a new URL
+def add_new_url():
+    while True:
+        choice = input("Do you want to add a new HTTPS site? (y/n): ").lower()
+        if choice == 'y':
+            new_url = input("Enter the new HTTPS URL: ")
+            new_site_name = input("Enter a name for this site: ")
+            urls.append((new_url, new_site_name))
+            print_colored(f"Added new site: {new_site_name} ({new_url})", '92')  # Green color
+        elif choice == 'n':
+            break
+        else:
+            print("Invalid choice. Please enter 'y' or 'n'.")
+
+# Initialize session
+session = requests.Session()
+
+def get_headers(path):
+    return {
+        "authority": "pentil.pink",
+        "method": "POST",
+        "path": path,
+        "scheme": "https",
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Origin": "https://pentil.pink",
+        "Referer": f"https://pentil.pink{path}",
+        "Sec-Ch-Ua": '"Not.A/Brand";v="8", "Chromium";v="120"',
+        "Sec-Ch-Ua-Mobile": "?1",
+        "Sec-Ch-Ua-Platform": '"Android"',
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+    }
+
+def submit_referral():
+    base_url, site_name = random.choice(urls)
+    ref_code = ref_codes.get(site_name)
+    
+    if ref_code is None:
+        print_colored(f"Skipping {site_name} as no referral code was provided.", '93')  # Yellow color
+        return
+
+    path = "/pentil.php"
+    url = f"{base_url}{path}"
+    headers = get_headers(path)
+
+    data = {"refString": ref_code}
+    
+    try:
+        print_colored(f"Submitting to: {site_name} ({url})", '95')  # Purple color
+        response = session.post(url, headers=headers, data=data)
+        if response.status_code == 200:
+            print_colored(f"Response from server: {response.text.strip()}", '94')  # Blue color
+        else:
+            print_colored(f"Error {response.status_code}: Failed to process referral.", '91')  # Red color
+    except Exception as e:
+        print_colored(f"An error occurred: {e}", '91')  # Red color
+
+def cleanup(signum, frame):
+    print_colored("\nClosing session and terminating...", '93')  # Yellow color
+    session.close()
+    sys.exit(0)
+
+# Register cleanup function to handle interrupt signal (Ctrl+C)
+signal.signal(signal.SIGINT, cleanup)
+
+show_welcome_message()
+
+# Ask if the user wants to add a new HTTPS site
+add_new_url()
+
+# Get referral codes for each site
+for _, site_name in urls:
+    ref_code = get_ref_code(site_name)
+    if ref_code:
+        ref_codes[site_name] = ref_code
+
+try:
+    while True:
+        submit_referral()
+        wait_time = random.randint(40, 55)
+        print_colored(f"Waiting for {wait_time} seconds before the next submission...", '93')  # Yellow color
+        time.sleep(wait_time)
+except KeyboardInterrupt:
+    cleanup(None, None)
